@@ -8,8 +8,8 @@
  * @copyright Copyright 2010, Corey Losenegger (http://coreyloose.com)
  * @license Clear BSD (http://labs.metacarta.com/license-explanation.html)
  */
-
-class ConstantInjector extends AbstractFunction
+ 
+class ConstantInjector extends AbstractConstantInjector
 {
 	private $_vars;
 	

@@ -10,19 +10,23 @@
  */
 
 require_once 'AbstractFunction.php';
+require_once 'AbstractConstantInjector.php';
 
 class PhpEvaluator
 {
-	private $_vars = array();
 	private $_functions = array();
+	private $_functionsResolveConstants = array();
+	
 	private $_constantResolver;
 
-	public function registerFunction( AbstractFunction $function )
+	public function registerFunction( AbstractFunction $function, $resolveConstants = true )
 	{
-		$this->_functions[get_class($function)] = $function;	
+		$function->setEvaluator($this);
+		$this->_functions[get_class($function)] = $function;
+		$this->_functionsResolveConstants[get_class($function)] = $resolveConstants;
 	}
 	
-	public function setConstantResolver( $functionName )
+	public function setConstantResolver( $functionName, $params = array() )
 	{
 		if( !isset($this->_functions[$functionName]) ) {
 			throw new Exception(
@@ -31,6 +35,12 @@ class PhpEvaluator
 			);
 		}
 		$this->_constantResolver = $this->_functions[$functionName];
+		$this->_constantResolver->setParams($params);
+	}
+	
+	public function getConstantResolver()
+	{
+		return $this->_constantResolver;
 	}
 	
 	public function calculate( $string )
@@ -41,11 +51,11 @@ class PhpEvaluator
 			if( $deepestNesting == 0 ) break;
 			$string = $this->_calculateDeepest($string, $deepestNesting);
 		}
-
+		
 		if( $this->_containsConstant($string) ){
 			$string = $this->_resolveConstants($string);
 		}
-		
+
 		return $this->_evalMath($string);
 	}
 	
@@ -65,7 +75,7 @@ class PhpEvaluator
 			//keep digging until we reach the deepest nesting
 			if( $open - $close != $deepestNesting ) {
 				$result .= $string[$i];
-				continue;	
+				continue;
 			}
 			
 			/* If there is a possible function call, identified
@@ -74,11 +84,11 @@ class PhpEvaluator
 			 */
 			$functionName = '';
 			$prevI = $i;
-			while( preg_match('/[a-zA-Z]/', $string[--$i]) ){
+			while( $i>0 && preg_match('/[a-zA-Z_]/', $string[--$i]) ){
 				$functionName .= $string[$i];				
 			}
 			if( $functionName ){
-				$result = substr($result, 0, $prevI-($prevI-$i)+1);
+				$result = substr($result, 0, strlen($result)-strlen($functionName));
 				$functionName = strrev($functionName);
 			}
 			$i = $prevI;
@@ -130,7 +140,9 @@ class PhpEvaluator
 		$args = explode(',', $argsAsString);
 		foreach( $args as &$arg ) {
 			$arg = trim($arg);
-			if( $this->_containsConstant($arg) ) {
+			if( $this->_functionsResolveConstants[$functionName]
+			    && $this->_containsConstant($arg) )
+			{
 				$arg = $this->_resolveConstants($arg);
 			}
 		}
@@ -140,7 +152,7 @@ class PhpEvaluator
 	
 	protected function _containsConstant( $string )
 	{
-		if( preg_match("/[a-zA-Z]/", $string) ){
+		if( preg_match("/[a-zA-Z_]/", $string) ){
 			return true;
 		}
 		return false;
@@ -156,7 +168,7 @@ class PhpEvaluator
 		
 		$stringSplit =
 			preg_split(
-				"/([a-zA-Z]+)/",
+				"/([a-zA-Z_]+)/",
 				$string,
 				-1,
 				PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE
@@ -164,7 +176,7 @@ class PhpEvaluator
 
 		foreach( $stringSplit as $stringPart )
 		{
-			if( preg_match("/[a-zA-Z]/", $stringPart) ){
+			if( preg_match("/[a-zA-Z_]/", $stringPart) ){
 				$stringPart = $this->_constantResolver->execute(array($stringPart));
 			}
 			$result .= $stringPart;
