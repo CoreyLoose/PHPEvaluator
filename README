@@ -3,8 +3,8 @@
 ################################################################################
 PhpEvaluator can take a math formula, with your own functions and constants
 injected, and calculate a numeric answer from it. What it is useful for is
-building your own domain specific language (DSL) inside to PHP to model a problem set
-in a more readable way.
+building your own domain specific language (DSL) inside of PHP to model a problem 
+set in a more readable way.
 
 You can create and register your own functions by extending the AbstractFunction
 class and implementing the execute function. Then when you use the name of your
