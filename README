@@ -1,0 +1,40 @@
+################################################################################
+# About
+################################################################################
+PhpEvaluator can take a math formula, with your own functions and constants
+injected, and calculate a numeric answer from it. What it is useful for is
+building your own domain specific language (DSL) inside to PHP to model a problem set
+in a more readable way.
+
+You can create and register your own functions by extending the AbstractFunction
+class and implementing the execute function. Then when you use the name of your
+class in a calculation, the evaluator calls it with the provided arguments.
+
+Setting up a constant parser gives you a way to make arbitrary, non-function,
+words in your calculation equate to a numeric value.
+
+
+################################################################################
+# Example Usage
+################################################################################
+As an example, a constant parser and averaging function are incldued but the
+code is ment to make it simple to add your own. To get a taste for what you
+could build, take a look at the following example:
+
+<?php
+require_once '/PhpEvaluator/PhpEvaluator.php';
+require_once '/PhpEvaluator/functions/AVG.php';
+require_once '/PhpEvaluator/functions/ConstantInjector.php';
+
+$evaluator = new PhpEvaluator();
+$evaluator->registerFunction(new AVG());
+$evaluator->registerFunction(new ConstantInjector(array(
+	'test'=>100
+)));
+$evaluator->setConstantResolver('ConstantInjector');
+
+echo
+$evaluator->calculate('( (2+2) / (AVG(4,2,1)) ) * 10') , '<br/>' ,
+$evaluator->calculate('( (2+2) / (2+1) ) * 10') , '<br/>' ,
+$evaluator->calculate('AVG(100, AVG(test,300), 300)') , '<br/>' ,
+$evaluator->calculate('( (2+2) / (2+1+test) ) * 10') ;
