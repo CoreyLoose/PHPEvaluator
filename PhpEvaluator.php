@@ -47,7 +47,7 @@ class PhpEvaluator
 	{
 		while(true)
 		{
-			$deepestNesting = $this->_deepestNesting($string);
+		    $deepestNesting = $this->_deepestNesting($string);
 			if( $deepestNesting == 0 ) break;
 			$string = $this->_calculateDeepest($string, $deepestNesting);
 		}
@@ -77,27 +77,29 @@ class PhpEvaluator
 				$result .= $string[$i];
 				continue;
 			}
-			
+
 			/* If there is a possible function call, identified
 			 * by a letters only string placed directly infront of the
 			 * opening (, we walk backwords to find it
 			 */
 			$functionName = '';
 			$prevI = $i;
+
 			while( $i>0 && preg_match('/[a-zA-Z_]/', $string[--$i]) ){
-				$functionName .= $string[$i];				
+				$functionName .= $string[$i];
 			}
 			if( $functionName ){
 				$result = substr($result, 0, strlen($result)-strlen($functionName));
 				$functionName = strrev($functionName);
 			}
 			$i = $prevI;
-						
+
 			//walk forwards until we find the closing )
 			$stringToCalc = '';
 			while( $string[++$i] != ')' ){
 				$stringToCalc .= $string[$i];
 			}
+
 			$close++;
 			
 			//do the math
@@ -141,7 +143,7 @@ class PhpEvaluator
 		foreach( $args as &$arg ) {
 			$arg = trim($arg);
 			if( $this->_functionsResolveConstants[$functionName]
-			    && $this->_containsConstant($arg) )
+				&& $this->_containsConstant($arg) )
 			{
 				$arg = $this->_resolveConstants($arg);
 			}
@@ -161,7 +163,7 @@ class PhpEvaluator
 	protected function _resolveConstants( $string )
 	{
 		if( !$this->_constantResolver ){
-			throw new Exception('Constant detected in formula with no resolver set');
+			throw new Exception('Constant detected in formula with no resolver set: '.$string);
 		}
 		
 		$result = '';
@@ -192,7 +194,9 @@ class PhpEvaluator
 		for( $i=0; $i<$inputLength; $i++ ) {
 			if( $string[$i] == '(' ) {
 				$open++;
-				$deepest = $open - $close;
+				if( $open - $close > $deepest ) {
+					$deepest = $open - $close;
+				}
 			} else if( $string[$i] == ')' ) {
 				$close++;
 			}
