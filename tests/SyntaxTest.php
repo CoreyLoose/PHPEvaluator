@@ -7,9 +7,12 @@ class SyntaxTest extends PHPUnit_Framework_TestCase
     {
         $eval = TestUtils::getEvalInstance();
         $this->assertEquals($eval->calculate('AVG(5,3,1)'), 3);
+        $this->assertEquals($eval->calculate('AVG(5,3*2,1)'), 4);
         $this->assertEquals($eval->calculate('AVG(5,3,1) + AVG(5,3,1)'), 6);
         $this->assertEquals($eval->calculate('(AVG(2,2) + AVG(2,2)) / 2'), 2);
         $this->assertEquals($eval->calculate('(AVG(3,3) + AVG(7,7)) / AVG(2,2)'), 5);
+        $this->assertEquals($eval->calculate('SUM(SUM(4)/2)'), 2);
+        $this->assertEquals($eval->calculate('SUM(4/2)'), 2);
     }
 
     public function testConstants() {

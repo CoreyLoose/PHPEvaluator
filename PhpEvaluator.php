@@ -19,11 +19,14 @@ class PhpEvaluator
 	
 	private $_constantResolver;
 
-	public function registerFunction( AbstractFunction $function, $resolveConstants = true )
+	private $_debug_mode;
+
+	public function registerFunction( AbstractFunction $function, $resolveConstants = true, $debug_mode = false )
 	{
 		$function->setEvaluator($this);
 		$this->_functions[get_class($function)] = $function;
 		$this->_functionsResolveConstants[get_class($function)] = $resolveConstants;
+		$this->_debug_mode = $debug_mode;
 	}
 	
 	public function setConstantResolver( $functionName, $params = array() )
@@ -47,7 +50,7 @@ class PhpEvaluator
 	{
 		while(true)
 		{
-		    $deepestNesting = $this->_deepestNesting($string);
+			$deepestNesting = $this->_deepestNesting($string);
 			if( $deepestNesting == 0 ) break;
 			$string = $this->_calculateDeepest($string, $deepestNesting);
 		}
@@ -61,6 +64,7 @@ class PhpEvaluator
 	
 	protected function _calculateDeepest( $string, $deepestNesting )
 	{
+		$this->_debug("Calc deepest: $string, $deepestNesting");
 		$result = '';
 		$open = $close = 0;
 		$inputLength = strlen($string);
@@ -105,7 +109,7 @@ class PhpEvaluator
 			//do the math
 			if( $functionName )
 			{
-				$result .= $this->_callFunction($functionName, $stringToCalc);					
+				$result .= $this->_callFunction($functionName, $stringToCalc);
 			} 
 			else if( $this->_containsConstant($stringToCalc) )
 			{
@@ -125,6 +129,7 @@ class PhpEvaluator
 	
 	protected function _evalMath( $stringToEval )
 	{
+		$this->_debug("eval $stringToEval");
 		$result = 0;
 		$stringToEval = '$result = '.$stringToEval.';';
 		ob_start();
@@ -147,8 +152,10 @@ class PhpEvaluator
 			{
 				$arg = $this->_resolveConstants($arg);
 			}
+			$arg = $this->_evalMath($arg);
 		}
-		
+
+		$this->_debug("Execute $functionName(".implode(',',$args).")");
 		return $this->_functions[$functionName]->execute($args);
 	}
 	
@@ -205,7 +212,14 @@ class PhpEvaluator
 		if( $open != $close ) {
 			throw new Exception('Invalid formula - Parentheses do not match.');
 		}
-		
 		return $deepest;
+	}
+
+	protected function _debug( $string )
+	{
+		if (!$this->_debug_mode) {
+			return;
+		}
+		echo $string."\n";
 	}
 }
